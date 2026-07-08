@@ -1,3 +1,5 @@
+require('dotenv').config(); // 1. Environment Variable Load
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -5,6 +7,10 @@ const morgan = require('morgan');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const errorHandler = require('./middlewares/errorHandler');
+
+// 2. Database Connection Import & Call (Serverless Connection Fix)
+const connectDB = require('./config/database');
+connectDB().catch((err) => console.error("Database connection error:", err));
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
@@ -16,19 +22,18 @@ const categoryRoutes = require('./routes/categoryRoutes');
 
 const app = express();
 
-// CORS - must come BEFORE helmet so preflight OPTIONS requests work
+// CORS Configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
     const allowedOrigins = [
-      process.env.FRONTEND_URL || 'http://localhost:5173',
+      process.env.FRONTEND_URL,
       'http://localhost:5173',
       'http://localhost:5174',
     ];
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
-      callback(null, true); // Allow all origins in development
+      callback(null, true);
     }
   },
   credentials: true,
@@ -36,11 +41,10 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
-// Handle preflight requests explicitly
 app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 
-// Security middleware - configured to not block CORS
+// Security middleware
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -54,7 +58,6 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Webhook routes MUST come before express.json() middleware
-// Stripe requires raw body for signature verification
 app.use('/api/webhooks', webhookRoutes);
 
 // Body parser
@@ -74,6 +77,14 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/categories', categoryRoutes);
 
+// 3. Base Endpoint ( Root / URL-এ হিট করলে যেন 500/404 না আসে )
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Welcome to E-commerce API Server',
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -84,7 +95,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Stripe publishable key endpoint (for frontend)
+// Stripe publishable key endpoint
 app.get('/api/config/stripe', (req, res) => {
   res.json({
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
