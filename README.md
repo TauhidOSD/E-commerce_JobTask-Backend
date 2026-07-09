@@ -1,3 +1,4 @@
+## 🌐 Live URL Frontend : https://e-commerce-job-task-frontend.vercel.app/
 # 🛒 E-commerce Backend — Ordering & Payment System
 
 A production-ready RESTful API backend for an e-commerce ordering and payment system, built with **Node.js**, **Express.js**, and **MongoDB**. Features dual payment gateway integration (**Stripe** + **bKash**), role-based access control, OOP entity classes, Strategy Pattern for payments, DFS-based category tree with in-memory caching, and comprehensive test coverage.
