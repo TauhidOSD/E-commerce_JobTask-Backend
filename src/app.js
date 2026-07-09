@@ -23,17 +23,20 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const app = express();
 
 // CORS Configuration
+const allowedOrigins = [
+  'https://e-commerce-job-task-frontend.vercel.app',
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
+  'http://localhost:5174',
+].filter(Boolean); // undefined বা ফাঁকা মান সরিয়ে ফেলবে
+
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      process.env.FRONTEND_URL,
-      'http://localhost:5173',
-      'http://localhost:5174',
-    ];
+    // Postman/Server-to-Server বা Allowed origins-এর জন্য পারমিশন
     if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
-      callback(null, true);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
